@@ -60,5 +60,10 @@ jib {
 	}
 	to {
 		image = "coupon-service:latest"
+		tags = setOf("latest", project.version.toString())
+	}
+	container {
+		ports = listOf("8080")
+		creationTime = "USE_CURRENT_TIMESTAMP"
 	}
 }
