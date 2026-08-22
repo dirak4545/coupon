@@ -2,8 +2,9 @@ plugins {
 	kotlin("jvm") version "2.4.0"
 	kotlin("plugin.spring") version "2.4.0"
 	id("org.springframework.boot") version "4.1.1"
-	id("io.spring.dependency-management") version "1.1.7"
+	id("io.spring.dependency-management") version "1.1.7" //의존성을 자동 관리
 	kotlin("plugin.jpa") version "2.4.0"
+	id("com.google.cloud.tools.jib") version "3.5.4"
 }
 
 group = "com.apiece"
@@ -38,11 +39,26 @@ kotlin {
 }
 
 allOpen {
-	annotation("jakarta.persistence.Entity")
+	annotation("jakarta.persistence.Entity")// 기본적으로 닫혀 있지만 이렇게 열어주어서 상속, 프록시 기술 사용가능
 	annotation("jakarta.persistence.MappedSuperclass")
 	annotation("jakarta.persistence.Embeddable")
 }
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+}
+
+jib {
+	from {
+		image = "eclipse-temurin:26-jre"
+		platforms {
+			platform {
+				architecture = "arm64"
+				os = "linux"
+			}
+		}
+	}
+	to {
+		image = "coupon-service:latest"
+	}
 }

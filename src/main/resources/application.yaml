@@ -1,3 +1,25 @@
 spring:
   application:
     name: coupon
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/coupon}
+    username: ${SPRING_DATASOURCE_USERNAME:coupon}
+    password: ${SPRING_DATASOURCE_PASSWORD:coupon}
+#  data:
+#    redis:
+#      host: ${SPRING_DATA_REDIS_HOST:localhost}
+#      port: ${SPRING_DATA_REDIS_PORT:6379}
+  jpa:
+    hibernate:
+      ddl-auto: update #entity가 업데이트 될 때만 업데이트 /실제 배포에서는 none으로  ㄹ
+    open-in-view: false
+    show-sql: true
+  mvc:
+    problemdetails:
+      enabled: true
+
+logging:
+  level:
+    com.apiece.coupon: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE #배포 할 때는 민감정보가 유츌될 수 있으므로 막아두
