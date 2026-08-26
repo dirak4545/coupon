@@ -8,16 +8,17 @@ import com.apiece.coupon.domain.IssuanceRepository
 import com.apiece.coupon.support.AlreadyIssuedException
 import com.apiece.coupon.support.CouponNotFoundException
 import com.apiece.coupon.support.NotStartedException
-import com.apiece.coupon.support.SoldOutException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
 @Service
-class CouponService (
+class CouponService(
     private val couponRepository: CouponRepository,
-    private val issuedRepository: IssuanceRepository,
+    private val issuanceRepository: IssuanceRepository,
+    private val couponIssuer: CouponIssuer,
 ) {
+
     @Transactional
     fun createCoupon(request: CreateCouponRequest): Coupon {
         val coupon = couponRepository.save(
@@ -28,6 +29,7 @@ class CouponService (
                 startsAt = request.startsAt,
             )
         )
+        couponIssuer.initStock(coupon.id!!, coupon.totalQuantity)
         return coupon
     }
 
@@ -40,24 +42,21 @@ class CouponService (
         if (!coupon.isBookingOpen(now)) {
             throw NotStartedException()
         }
-        if (coupon.isSoldOut()) {
-            throw SoldOutException()
-        }
-        if (issuedRepository.existsByUserIdAndCouponId(userId, couponId)) {
+
+        if (issuanceRepository.existsByUserIdAndCouponId(userId, couponId)) {
             throw AlreadyIssuedException()
         }
 
-        val updated = couponRepository.incrementIssuedQuantity(couponId)
-        if (updated == 0) {
-            throw SoldOutException()
-        }
+        couponIssuer.tryIssue(couponId)
+        couponRepository.incrementIssuedQuantity(couponId)
 
-        val issuance = Issuance(
-            userId = userId,
-            couponId = couponId,
-            issuedAt = now,
-            expiresAt = now.plusDays(coupon.validityDays.toLong()),
+        return issuanceRepository.save(
+            Issuance(
+                userId = userId,
+                couponId = couponId,
+                issuedAt = now,
+                expiresAt = now.plusDays(coupon.validityDays.toLong()),
+            )
         )
-        return issuedRepository.save(issuance)
     }
 }

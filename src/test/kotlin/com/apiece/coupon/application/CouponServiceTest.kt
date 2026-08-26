@@ -22,23 +22,24 @@ import kotlin.test.assertNotNull
 
 class CouponServiceTest {
 
-    private val couponRepository = mockk<CouponRepository>()
+    private val couponRepository = mockk<CouponRepository>(relaxUnitFun = true)
     private val issuanceRepository = mockk<IssuanceRepository>()
-    private val service = CouponService(couponRepository, issuanceRepository)
+    private val couponIssuer = mockk<CouponIssuer>(relaxUnitFun = true)
+    private val service = CouponService(couponRepository, issuanceRepository, couponIssuer)
 
     @Test
-    fun `행사 생성하면 저장된 Coupon 반환`() {
-        val saved = coupon(id = 1L, totalQuantity = 100)
+    fun `행사 생성하면 Redis 재고 키 초기화`() {
+        val saved = coupon(id = 7L, totalQuantity = 5000)
         every { couponRepository.save(any()) } returns saved
 
-        val result = service.createCoupon(CreateCouponRequest("5월 행사", 100, 7))
+        val result = service.createCoupon(CreateCouponRequest("Flash Event", 5000, 7))
 
-        assertEquals(1L, result.id)
-        assertEquals(100, result.totalQuantity)
+        assertEquals(7L, result.id)
+        verify { couponIssuer.initStock(7L, 5000) }
     }
 
     @Test
-    fun `발급 성공시 issuedQuantity 증가 + Issuance 저장`() {
+    fun `발급 성공시 issued_quantity 증가 + Issuance 저장`() {
         val coupon = coupon(id = 1L, totalQuantity = 10, issuedQuantity = 5)
         val captured = slot<Issuance>()
         every { couponRepository.findById(1L) } returns Optional.of(coupon)
@@ -48,7 +49,8 @@ class CouponServiceTest {
 
         val result = service.issue(1L, 42L)
 
-        verify(exactly = 1) { couponRepository.incrementIssuedQuantity(1L) }
+        verify { couponIssuer.tryIssue(1L) }
+        verify { couponRepository.incrementIssuedQuantity(1L) }
         assertEquals(42L, result.userId)
         assertEquals(1L, result.couponId)
         assertNotNull(result.expiresAt)
@@ -68,8 +70,10 @@ class CouponServiceTest {
     }
 
     @Test
-    fun `매진이면 SoldOutException`() {
-        every { couponRepository.findById(1L) } returns Optional.of(coupon(id = 1L, totalQuantity = 5, issuedQuantity = 5))
+    fun `Issuer 가 SoldOutException 을 던지면 그대로 전파`() {
+        every { couponRepository.findById(1L) } returns Optional.of(coupon(id = 1L))
+        every { issuanceRepository.existsByUserIdAndCouponId(42L, 1L) } returns false
+        every { couponIssuer.tryIssue(1L) } throws SoldOutException()
         assertFailsWith<SoldOutException> { service.issue(1L, 42L) }
     }
 

@@ -37,5 +37,5 @@ class Coupon (
     fun isBookingOpen(now: LocalDateTime): Boolean =
         startsAt?.let { !now.isBefore(it) } ?: true
     //startsAt(시작 시간)이 현재 시간보다 전이 아니면 발급 가능이니까 true 반환, 없으면 true 반환
-    fun isSoldOut(): Boolean = issuedQuantity >= totalQuantity
+    // 매진 판정은 Redis(coupon:{id}:stock)로 이동했으므로 isSoldOut() 제거
 }
