@@ -9,8 +9,8 @@ import com.apiece.coupon.support.AlreadyIssuedException
 import com.apiece.coupon.support.CouponNotFoundException
 import com.apiece.coupon.support.NotStartedException
 import com.apiece.coupon.support.SoldOutException
-import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
 @Service
@@ -25,7 +25,7 @@ class CouponService (
                 name = request.name,
                 totalQuantity = request.totalQuantity,
                 validityDays = request.validityDays,
-                startsAt = request.startsAt?.let { LocalDateTime.parse(it) },
+                startsAt = request.startsAt,
             )
         )
         return coupon
