@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coupon-config
+  namespace: coupon
+data:
+  # 값은 반드시 문자열. 숫자도 따옴표로 감싼다.
+  SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/coupon?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+  SPRING_DATASOURCE_USERNAME: "coupon"
+
+  SPRING_DATA_REDIS_HOST: "redis"
+  SPRING_DATA_REDIS_PORT: "6379"
+
+  SPRING_PROFILES_ACTIVE: "k8s"
+
+  # 컨테이너 메모리 한도를 JVM 이 인식하게 한다. 04 에서 다시 설명.
+  JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70 -XX:InitialRAMPercentage=50"
